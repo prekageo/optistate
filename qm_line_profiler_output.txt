@@ -1,0 +1,97 @@
+Timer unit: 2.79365e-007 s
+
+File: qm.py
+Function: compute_primes at line 43
+Total time: 16.6486 s
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    43                                             @profile
+    44                                             def compute_primes(self, cubes):
+    45                                               """
+    46                                               Find all prime implicants of the function.
+    47                                           
+    48                                               cubes: a list of indices for the minterms for which the function evaluates
+    49                                               to 1 or don't-care.
+    50                                               """
+    51                                           
+    52       140         2338     16.7      0.0      sigma = []
+    53      1000        16750     16.8      0.0      for i in xrange(self.numvars+1):
+    54       860        15372     17.9      0.0        sigma.append(set())
+    55      5164        81875     15.9      0.1      for i in cubes:
+    56      5024       327290     65.1      0.5        sigma[bitcount(i)].add((i,0))
+    57                                           
+    58       140         2319     16.6      0.0      primes = set()
+    59      1000        16219     16.2      0.0      while sigma:
+    60       860        13350     15.5      0.0        nsigma = []
+    61       860        20278     23.6      0.0        redundant = set()
+    62      3140        63654     20.3      0.1        for c1, c2 in zip(sigma[:-1], sigma[1:]):
+    63      2280        37866     16.6      0.1          nc = set()
+    64     35555       576342     16.2      1.0          for a in c1:
+    65    856943     14408595     16.8     24.2            for b in c2:
+    66    823668     25355984     30.8     42.5              m = merge(a, b)
+    67    823668     16121503     19.6     27.1              if m != None:
+    68     55497      1054014     19.0      1.8                nc.add(m)
+    69     55497      1203836     21.7      2.0                redundant |= set([a, b])
+    70      2280        41053     18.0      0.1          nsigma.append(nc)
+    71       860       217028    252.4      0.4        primes |= set(c for cubes in sigma for c in cubes) - redundant
+    72       860        16670     19.4      0.0        sigma = nsigma
+    73       140         2128     15.2      0.0      return primes
+
+File: qm.py
+Function: unate_cover at line 75
+Total time: 26.0909 s
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    75                                             @profile
+    76                                             def unate_cover(self, primes, ones):
+    77                                               """
+    78                                               Use the prime implicants to find the essential prime implicants of the
+    79                                               function, as well as other prime implicants that are necessary to cover
+    80                                               the function. This method uses the Petrick's method, which is a technique
+    81                                               for determining all minimum sum-of-products solutions from a prime implicant
+    82                                               chart.
+    83                                           
+    84                                               primes: the prime implicants that we want to minimize.
+    85                                               ones: a list of indices for the minterms for which we want the function to
+    86                                               evaluate to 1.
+    87                                               """
+    88                                           
+    89       140         2204     15.7      0.0      chart = []
+    90      1364        20509     15.0      0.0      for one in ones:
+    91      1224        18461     15.1      0.0        column = []
+    92     11713       183381     15.7      0.2        for i in xrange(len(primes)):
+    93     10489       184244     17.6      0.2          if (one & (~primes[i][1])) == primes[i][0]:
+    94      2924        48285     16.5      0.1            column.append(i)
+    95      1224        20188     16.5      0.0        chart.append(column)
+    96                                           
+    97       140         2125     15.2      0.0      covers = []
+    98       140         2235     16.0      0.0      if len(chart) > 0:
+    99       445         8497     19.1      0.0        covers = [set([i]) for i in chart[0]]
+   100      1224        19295     15.8      0.0      for i in xrange(1,len(chart)):
+   101      1084        16568     15.3      0.0        new_covers = []
+   102     10104       155715     15.4      0.2        for cover in covers:
+   103     39243       616914     15.7      0.7          for prime_index in chart[i]:
+   104     30223       552303     18.3      0.6            x = set(cover)
+   105     30223       556673     18.4      0.6            x.add(prime_index)
+   106     30223       463817     15.3      0.5            append = True
+   107   1800961     28184612     15.6     30.2            for j in xrange(len(new_covers)-1,-1,-1):
+   108   1770738     30572435     17.3     32.7              if x <= new_covers[j]:
+   109      5981       106957     17.9      0.1                del new_covers[j]
+   110   1764757     29931447     17.0     32.0              elif x > new_covers[j]:
+   111     15671       268098     17.1      0.3                append = False
+   112     30223       481406     15.9      0.5            if append:
+   113     15800       265243     16.8      0.3              new_covers.append(x)
+   114      1084        21768     20.1      0.0        covers = new_covers
+   115                                           
+   116       140         2191     15.7      0.0      min_complexity = 99999999
+   117      1244        54395     43.7      0.1      for cover in covers:
+   118      5813        97502     16.8      0.1        primes_in_cover = [primes[prime_index] for prime_index in cover]
+   119      1104       507967    460.1      0.5        complexity = self.calculate_complexity(primes_in_cover)
+   120      1104        18366     16.6      0.0        if complexity < min_complexity:
+   121       221         3401     15.4      0.0          min_complexity = complexity
+   122       221         3611     16.3      0.0          result = primes_in_cover
+   123                                           
+   124       140         2640     18.9      0.0      return min_complexity,result
+
